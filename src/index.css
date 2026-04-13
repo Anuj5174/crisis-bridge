@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --color-border: var(--color-slate-800);
+  --color-input: var(--color-slate-900);
+  --color-ring: var(--color-red-600);
+  --color-background: #0b0f1a;
+  --color-foreground: #ffffff;
+
+  --color-primary: #ef4444;
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #0f172a;
+  --color-secondary-foreground: #ffffff;
+
+  --color-destructive: #7f1d1d;
+  --color-destructive-foreground: #ffffff;
+
+  --color-muted: #1e293b;
+  --color-muted-foreground: #94a3b8;
+
+  --color-accent: #1e293b;
+  --color-accent-foreground: #ffffff;
+
+  --radius-lg: 0.75rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+}
+
+@layer base {
+  * {
+    @apply border-slate-800;
+  }
+  body {
+    @apply bg-[#0b0f1a] text-white;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-slate-950/40 backdrop-blur-md border border-slate-800/50;
+  }
+  
+  .sos-pulse {
+    @apply animate-pulse shadow-[0_0_30px_rgba(220,38,38,0.4)];
+  }
+}
+
+/* Custom Scrollbar for Tactical UI */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0f1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ef4444;
+}
