@@ -1,7 +1,5 @@
 # 🛠️ CrisisBridge v2: Defense-Grade Crisis Response
 
-![CrisisBridge Hero](crisis_bridge_hero_1776003748917.png)
-
 ## Overview
 
 **CrisisBridge v2** is a mission-critical emergency response platform designed for rapid awareness and coordination during domestic and international crises. Migrated from Next.js to a performance-optimized **Vite + React SPA**, it features a "Defense-Grade" tactical UI tailored for high-pressure environments where every second counts.
@@ -58,6 +56,7 @@ To bridge the gap between affected citizens and emergency responders through rea
    ```env
    VITE_SUPABASE_URL=your_supabase_project_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   VITE_GEMINI_API_KEY=your_gemini_api_key
    ```
 
 4. **Launch Development Server**:

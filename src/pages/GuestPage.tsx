@@ -1,45 +1,91 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { supabase } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { motion, AnimatePresence } from "framer-motion"
-import { Siren, Flame, Plus, Lock, CheckCircle2, History } from "lucide-react"
+import { Siren, Flame, Plus, Lock, CheckCircle2, History, User, MapPin, AlertCircle, EyeOff, Shield } from "lucide-react"
+import EvacuationMap from "@/components/EvacuationMap"
+
+type Step = 'initial' | 'role' | 'category' | 'assessment' | 'reported'
+type Category = 'Fire' | 'Medical' | 'Security' | 'Silent'
+type Role = 'Guest' | 'Staff' | 'Kitchen' | 'Security'
 
 export default function GuestPage() {
   const [loading, setLoading] = useState(false)
   const [incidentId, setIncidentId] = useState<string | null>(null)
-  const [step, setStep] = useState<'initial' | 'reporting' | 'reported'>('initial')
+  const [step, setStep] = useState<Step>('initial')
+  
+  // Incident State
+  const [role, setRole] = useState<Role>('Guest')
+  const [category, setCategory] = useState<Category>('Fire')
+  const [location, setLocation] = useState('')
+  const [coords, setCoords] = useState<{lat: number, lng: number} | null>(null)
+  const [metadata, setMetadata] = useState<Record<string, any>>({})
+  const [description, setDescription] = useState('')
 
-  async function triggerSOS() {
-    setStep('reporting')
+  // Silent Mode Logic
+  const longPressTimer = useRef<any>(null)
+
+  // GPS Capture
+  useEffect(() => {
+    if (step === 'role') {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.warn("GPS Denied", err),
+        { enableHighAccuracy: true }
+      )
+    }
+  }, [step])
+
+  const startSilentTimer = () => {
+    longPressTimer.current = setTimeout(() => {
+      submitSilentReport()
+    }, 4000)
   }
 
-  async function submitReport(type: string) {
+  const cancelSilentTimer = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current)
+  }
+
+  async function submitSilentReport() {
+    setLoading(true)
+    const { data, error } = await supabase.from('incidents').insert({
+      type: 'Silent Distress',
+      severity: 'CRITICAL',
+      location: 'COVERT_SIGNAL',
+      description: 'Covert signal triggered via long-press.',
+      status: 'REPORTED',
+      is_silent: true,
+      latitude: coords?.lat,
+      longitude: coords?.lng
+    }).select().single()
+    
+    if (!error) {
+      setIncidentId(data.id)
+      setStep('reported')
+    }
+    setLoading(false)
+  }
+
+  async function submitFullReport() {
     setLoading(true)
     
-    const location = "Main Lobby - Sector 4" 
-    const description = `${type} emergency reported via Guest SOS portal.`
-
-    const { data, error } = await supabase
-      .from('incidents')
-      .insert({
-        type,
-        severity: type === 'Fire' ? 'CRITICAL' : 'HIGH',
-        location,
-        description,
-        status: 'REPORTED'
-      })
-      .select()
-      .single()
+    const { data, error } = await supabase.from('incidents').insert({
+      type: category,
+      severity: (category === 'Fire' || metadata.trapped === 'Yes') ? 'CRITICAL' : 'HIGH',
+      location: location || 'Unknown Sector',
+      description: description || `${category} emergency reported by ${role}.`,
+      status: 'REPORTED',
+      reported_by: role,
+      metadata,
+      latitude: coords?.lat,
+      longitude: coords?.lng,
+      is_silent: category === 'Silent'
+    }).select().single()
 
     if (error) {
-      console.error("SOS Error:", error)
-      const isConnectionError = error.message?.includes("Failed to fetch") || error.message?.includes("fetch");
-      const errorMsg = isConnectionError 
-        ? "CONNECTION ERROR: Terminal offline. Please check your network or configuration."
-        : `SOS ERROR: ${error.message}. Please try again.`;
-      
-      alert(errorMsg)
+       console.error(error)
+      alert("Transmission failure. Check tactical link.")
     } else {
       setIncidentId(data.id)
       setStep('reported')
@@ -47,121 +93,209 @@ export default function GuestPage() {
     setLoading(false)
   }
 
+  async function updateStatus(status: 'SAFE' | 'NEED_HELP') {
+    if (!incidentId) return
+    const { error } = await supabase.from('occupant_status').insert({
+      incident_id: incidentId,
+      name: role === 'Guest' ? 'Guest' : role,
+      zone: location,
+      role: role,
+      status: status
+    })
+    
+    if (!error) {
+      alert(status === 'SAFE' ? "STATUS SENT: Marked SAFE. Stay at assembly point." : "SOS RE-TRANSMITTED: Help needed signal sent.")
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-[#0b0f1a] text-white flex flex-col items-center justify-center p-6 selection:bg-red-500/30">
-      <div className="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-600 to-transparent shadow-[0_0_20px_rgba(220,38,38,0.5)]" />
+    <div className="min-h-screen bg-[#0b0f1a] text-white flex flex-col items-center justify-center p-6 font-sans">
+      <div className="fixed top-0 left-0 w-full h-1 bg-red-600 shadow-[0_0_20px_rgba(220,38,38,0.5)] z-50" />
 
       <AnimatePresence mode="wait">
         {step === 'initial' && (
-          <motion.div 
-            key="initial"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.1 }}
-            className="flex flex-col items-center gap-12"
-          >
-            <div className="text-center space-y-2">
-              <h1 className="text-4xl font-black tracking-tighter uppercase italic text-red-600">
-                CrisisBridge
-              </h1>
-              <p className="text-xs font-bold uppercase tracking-[0.4em] opacity-40">Tactical Response Link</p>
+          <motion.div key="initial" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center space-y-12">
+            <div 
+              onMouseDown={startSilentTimer} 
+              onMouseUp={cancelSilentTimer}
+              onTouchStart={startSilentTimer}
+              onTouchEnd={cancelSilentTimer}
+              className="cursor-pointer select-none active:scale-95 transition-transform"
+            >
+              <h1 className="text-5xl font-black tracking-tighter uppercase italic text-red-600 mb-2">CrisisBridge</h1>
+              <p className="text-[10px] font-bold uppercase tracking-[0.5em] opacity-40">Tactical Node v2.5</p>
             </div>
 
-            <div className="relative group">
-              <div className="absolute -inset-8 bg-red-600/20 rounded-full blur-3xl group-hover:bg-red-600/30 transition-all duration-700" />
-              <Button 
-                variant="sos"
-                size="xl"
-                onClick={triggerSOS}
-                disabled={loading}
-              >
-                SOS
-              </Button>
-            </div>
-
-            <p className="text-sm font-medium text-slate-400 max-w-[200px] text-center leading-relaxed">
-              Tap for immediate emergency assistance
+            <Button variant="sos" size="xl" onClick={() => setStep('role')}>SOS</Button>
+            
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest animate-pulse">
+              Hold logo 4s for Silent Distress
             </p>
           </motion.div>
         )}
 
-        {step === 'reporting' && (
-          <motion.div 
-            key="reporting"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="w-full max-w-md"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <Siren className="w-5 h-5 text-red-500 animate-pulse" />
-                  Select Type
-                </CardTitle>
-                <CardDescription>Dispatch will be alerted immediately.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <Button 
-                  onClick={() => submitReport('Medical')}
-                  disabled={loading}
-                  className="h-20 flex flex-col gap-1 items-start bg-slate-800/50 border-emerald-500/20 hover:border-emerald-500/50"
-                  variant="outline"
-                >
-                  <div className="flex items-center gap-2 font-black uppercase tracking-widest text-emerald-500">
-                    <Plus className="w-4 h-4" /> Medical
-                  </div>
-                  <span className="text-xs text-slate-400">Injury, Illness, Unconscious</span>
-                </Button>
-                
-                <Button 
-                  onClick={() => submitReport('Fire')}
-                  disabled={loading}
-                  className="h-20 flex flex-col gap-1 items-start bg-slate-800/50 border-orange-500/20 hover:border-orange-500/50"
-                  variant="outline"
-                >
-                  <div className="flex items-center gap-2 font-black uppercase tracking-widest text-orange-500">
-                    <Flame className="w-4 h-4" /> Fire / Smoke
-                  </div>
-                  <span className="text-xs text-slate-400">Visible Fire, Smoke, Gas Smell</span>
-                </Button>
+        {step === 'role' && (
+          <motion.div key="role" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="w-full max-w-md space-y-4">
+             <div className="flex items-center gap-2 mb-6">
+                <div className="h-1 flex-1 bg-red-600" />
+                <div className="h-1 flex-1 bg-slate-800" />
+                <div className="h-1 flex-1 bg-slate-800" />
+             </div>
+             <h2 className="text-2xl font-black uppercase italic tracking-tighter">Identify Your Role</h2>
+             <div className="grid grid-cols-2 gap-3">
+               {[
+                 { id: 'Guest', icon: User, label: 'Guest / Visitor' },
+                 { id: 'Staff', icon: Shield, label: 'Hotel Staff' },
+                 { id: 'Kitchen', icon: Flame, label: 'Kitchen Crew' },
+                 { id: 'Security', icon: Lock, label: 'Security Team' }
+               ].map((r) => (
+                 <Button 
+                   key={r.id} 
+                   variant="outline" 
+                   className="h-24 flex flex-col gap-2 border-slate-800 bg-slate-900/40 hover:border-red-500/50"
+                   onClick={() => { setRole(r.id as Role); setStep('category'); }}
+                 >
+                   <r.icon className="h-6 w-6 text-red-500" />
+                   <span className="text-[10px] font-black uppercase tracking-widest">{r.label}</span>
+                 </Button>
+               ))}
+             </div>
+          </motion.div>
+        )}
 
+        {step === 'category' && (
+          <motion.div key="cat" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="w-full max-w-md space-y-4">
+            <div className="flex items-center gap-2 mb-6">
+                <div className="h-1 flex-1 bg-red-600" />
+                <div className="h-1 flex-1 bg-red-600" />
+                <div className="h-1 flex-1 bg-slate-800" />
+             </div>
+            <h2 className="text-2xl font-black uppercase italic tracking-tighter">Select Emergency</h2>
+            <div className="space-y-3">
+              {[
+                { id: 'Fire', icon: Flame, color: 'text-orange-500', desc: 'Smoke, visible fire, explosion' },
+                { id: 'Medical', icon: Plus, color: 'text-emerald-500', desc: 'Injury, unconsciousness, cardiac' },
+                { id: 'Security', icon: Lock, color: 'text-blue-500', desc: 'Hostile guest, theft, violence' },
+                { id: 'Silent', icon: EyeOff, color: 'text-slate-400', desc: 'Discreet help (Hidden mode)' }
+              ].map((c) => (
                 <Button 
-                  onClick={() => submitReport('Security')}
-                  disabled={loading}
-                  className="h-20 flex flex-col gap-1 items-start bg-slate-800/50 border-blue-500/20 hover:border-blue-500/50"
-                  variant="outline"
+                  key={c.id} 
+                  variant="outline" 
+                  className="w-full h-20 justify-start gap-4 border-slate-800 bg-slate-900/40 hover:border-red-500/50"
+                  onClick={() => { setCategory(c.id as Category); setStep('assessment'); }}
                 >
-                  <div className="flex items-center gap-2 font-black uppercase tracking-widest text-blue-500">
-                    <Lock className="w-4 h-4" /> Security
+                  <c.icon className={`h-8 w-8 ${c.color}`} />
+                  <div className="text-left">
+                    <div className="text-sm font-black uppercase italic leading-none">{c.id}</div>
+                    <div className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-widest">{c.desc}</div>
                   </div>
-                  <span className="text-xs text-slate-400">Threat, Theft, Altercation</span>
                 </Button>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {step === 'assessment' && (
+          <motion.div key="assess" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="w-full max-w-md space-y-6">
+             <div className="flex items-center gap-2 mb-6">
+                <div className="h-1 flex-1 bg-red-600" />
+                <div className="h-1 flex-1 bg-red-600" />
+                <div className="h-1 flex-1 bg-red-600" />
+             </div>
+             <Card className="bg-slate-950 border-slate-800">
+               <CardHeader className="pb-4">
+                 <CardTitle className="text-lg flex items-center gap-2">
+                    <AlertCircle className="text-red-500" /> Assessment
+                 </CardTitle>
+               </CardHeader>
+               <CardContent className="space-y-6">
+                  {category === 'Fire' && (
+                    <>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Smoke Density</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {['Low', 'Medium', 'High'].map(v => (
+                            <Button key={v} variant={metadata.smoke === v ? 'default' : 'outline'} className="text-[10px]" onClick={() => setMetadata({...metadata, smoke: v})}>{v}</Button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">People Trapped?</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {['Yes', 'No', 'Unsure'].map(v => (
+                            <Button key={v} variant={metadata.trapped === v ? 'default' : 'outline'} className="text-[10px]" onClick={() => setMetadata({...metadata, trapped: v})}>{v}</Button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="space-y-3">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Exact Location</label>
+                     <div className="relative">
+                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                        <input 
+                          placeholder="Room #, Floor, or Area..." 
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-1 focus:ring-red-500 outline-none"
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                        />
+                     </div>
+                     {coords && <p className="text-[9px] font-mono text-emerald-500 uppercase tracking-widest">GPS Locked: {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}</p>}
+                  </div>
+
+                  <div className="space-y-3">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Quick Description</label>
+                     <textarea 
+                        className="w-full bg-slate-900 border border-slate-800 rounded-lg p-4 text-sm focus:ring-1 focus:ring-red-500 outline-none min-h-[100px]"
+                        placeholder="Additional details..."
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                     />
+                  </div>
+
+                  <Button className="w-full h-12 bg-red-600 hover:bg-red-700 font-black tracking-widest uppercase italic" onClick={submitFullReport} disabled={loading}>
+                    {loading ? 'Transmitting...' : 'Dispatch Emergency'}
+                  </Button>
+               </CardContent>
+             </Card>
           </motion.div>
         )}
 
         {step === 'reported' && (
-          <motion.div 
-            key="reported"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center space-y-6"
-          >
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500 mb-2">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500" />
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-3xl font-black tracking-tighter uppercase italic text-white">Reported</h2>
-              <p className="text-slate-400 text-sm max-w-xs mx-auto">
-                Incident <span className="text-white font-mono">{incidentId?.slice(0, 8)}</span> active.
-              </p>
-            </div>
+          <motion.div key="done" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center space-y-6">
+             <div className="w-24 h-24 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+                <CheckCircle2 className="h-12 w-12 text-emerald-500" />
+             </div>
+             <div>
+                <h2 className="text-3xl font-black uppercase italic tracking-tighter text-emerald-500">Signal Sent</h2>
+                <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">Incident #{incidentId?.slice(0,8)}</p>
+             </div>
+             
+             <EvacuationMap zone={location} />
 
-            <Button variant="ghost" className="text-slate-500 hover:text-white" onClick={() => setStep('initial')}>
-              <History className="w-4 h-4 mr-2" /> View History
-            </Button>
+             <div className="p-6 rounded-xl border border-slate-800 bg-slate-900/60 max-w-sm mx-auto space-y-4">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Status Check-in</p>
+                <div className="grid grid-cols-2 gap-3">
+                   <Button 
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] tracking-widest uppercase italic h-12"
+                      onClick={() => updateStatus('SAFE')}
+                   >
+                      I AM SAFE
+                   </Button>
+                   <Button 
+                      variant="outline"
+                      className="border-red-600/30 text-red-500 font-black text-[10px] tracking-widest uppercase italic h-12"
+                      onClick={() => updateStatus('NEED_HELP')}
+                   >
+                      STILL AT RISK
+                   </Button>
+                </div>
+             </div>
+
+             <Button variant="ghost" onClick={() => { setStep('initial'); setMetadata({}); setDescription(''); setLocation(''); }} className="text-slate-500 uppercase font-black text-[10px] tracking-widest">
+                <History className="h-4 w-4 mr-2" /> Return to Terminal
+             </Button>
           </motion.div>
         )}
       </AnimatePresence>

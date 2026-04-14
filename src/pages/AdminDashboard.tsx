@@ -16,6 +16,9 @@ import {
   Siren
 } from "lucide-react"
 
+import TacticalMap from "@/components/TacticalMap"
+import TerminalCommand from "@/components/TerminalCommand"
+
 export default function AdminDashboard() {
   const { incidents, loading } = useIncidents()
 
@@ -62,7 +65,7 @@ export default function AdminDashboard() {
                 Live Command Feed
               </h3>
             </div>
-            <div className="relative group">
+            <div className="relative group flex gap-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
               <input placeholder="Search Active..." className="h-8 w-40 pl-9 pr-4 text-xs bg-slate-900 border border-slate-800 rounded-md outline-none" />
             </div>
@@ -82,7 +85,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-slate-800">
                   <AnimatePresence mode="popLayout">
-                    {incidents.map((incident) => (
+                    {incidents.slice(0, 5).map((incident) => (
                       <motion.tr 
                         key={incident.id}
                         initial={{ opacity: 0, x: -10 }}
@@ -117,32 +120,18 @@ export default function AdminDashboard() {
                   </AnimatePresence>
                 </tbody>
               </table>
+              {incidents.length === 0 && <div className="p-8 text-center text-slate-500 font-bold uppercase text-[10px] tracking-widest">No active incidents</div>}
             </div>
           </Card>
+          
+          <TerminalCommand />
+          
         </div>
 
         <div className="space-y-6">
-          <Card className="border-slate-800 bg-slate-900/40">
-            <CardHeader>
-              <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-emerald-500" />
-                Response Log
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                { time: "14:42", event: "Security Team B dispatched" },
-                { time: "14:40", event: "Incident #4A2 initiated" },
-              ].map((item, i) => (
-                <div key={i} className="flex gap-3 border-l-2 border-slate-800 pl-4 py-1">
-                  <div>
-                    <span className="text-[10px] font-black font-mono text-slate-500">{item.time}</span>
-                    <p className="text-xs font-bold leading-tight">{item.event}</p>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+            <div className="h-[600px] w-full">
+               <TacticalMap incidents={incidents} />
+            </div>
         </div>
       </div>
     </div>

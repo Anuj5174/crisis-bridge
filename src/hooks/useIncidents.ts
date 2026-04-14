@@ -8,6 +8,13 @@ export type Incident = {
   location: string
   description: string
   status: string
+  reported_by?: string
+  latitude?: number
+  longitude?: number
+  metadata?: Record<string, unknown>
+  is_silent?: boolean
+  reporter_role?: string
+  urgency_score?: number
   created_at: string
 }
 

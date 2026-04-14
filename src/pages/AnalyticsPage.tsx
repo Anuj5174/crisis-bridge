@@ -7,13 +7,11 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  LineChart,
-  Line,
   Cell,
   PieChart,
   Pie
 } from "recharts"
-import { BarChart3, TrendingUp, Clock, AlertTriangle, Download, Calendar } from "lucide-react"
+import { BarChart3, Clock, AlertTriangle, Download, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const DATA_VOLUME = [
@@ -33,14 +31,7 @@ const DATA_CATEGORIES = [
   { name: "Other", value: 10, color: "#f59e0b" },
 ]
 
-const DATA_RESPONSE = [
-  { time: "00:00", avg: 140 },
-  { time: "04:00", avg: 120 },
-  { time: "08:00", avg: 180 },
-  { time: "12:00", avg: 160 },
-  { time: "16:00", avg: 110 },
-  { time: "20:00", avg: 130 },
-]
+
 
 export default function AnalyticsPage() {
   return (

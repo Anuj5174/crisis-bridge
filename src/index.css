@@ -61,3 +61,22 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #ef4444;
 }
+
+/* Tactical Map Leaflet Overrides */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #0f172a !important;
+  color: white !important;
+  border: 1px solid #1e293b;
+  box-shadow: 0 0 20px rgba(0,0,0,0.8) !important;
+}
+.leaflet-popup-content {
+  margin: 10px !important;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: #94a3b8 !important;
+}
+.custom-icon {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
