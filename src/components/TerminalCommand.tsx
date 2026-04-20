@@ -5,11 +5,7 @@ import { supabase } from "@/utils/supabase/client";
 
 export default function TerminalCommand() {
   const [input, setInput] = useState("");
-  const [output, setOutput] = useState<string[]>([
-    "CRISISBRIDGE OS v2.1.0",
-    "Type /help for available commands.",
-    "----------------------------------"
-  ]);
+  const [output, setOutput] = useState<string[]>([]);
 
   const handleCommand = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter' || !input.trim()) return;
@@ -89,7 +85,6 @@ export default function TerminalCommand() {
       <CardHeader className="py-2 px-4 border-b border-slate-800 flex flex-row items-center justify-between">
         <div className="flex items-center gap-2 text-slate-500">
             <TerminalIcon className="h-4 w-4" />
-            <span className="uppercase font-bold tracking-widest">TAC-COM CLI</span>
         </div>
         <div className="flex gap-1.5">
            <div className="h-2 w-2 rounded-full bg-red-500/20" />
@@ -104,7 +99,6 @@ export default function TerminalCommand() {
           </div>
         ))}
         <div className="flex gap-2 text-emerald-400 mt-2">
-            <span>root@cb:~#</span>
             <input 
                 type="text" 
                 value={input}

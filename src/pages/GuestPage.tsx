@@ -19,23 +19,46 @@ export default function GuestPage() {
   const [role, setRole] = useState<Role>('Guest')
   const [category, setCategory] = useState<Category>('Fire')
   const [location, setLocation] = useState('')
+  const [useLiveLocation, setUseLiveLocation] = useState(false)
   const [coords, setCoords] = useState<{lat: number, lng: number} | null>(null)
+  const [gpsStatus, setGpsStatus] = useState('Awaiting fix...')
   const [metadata, setMetadata] = useState<Record<string, any>>({})
   const [description, setDescription] = useState('')
 
   // Silent Mode Logic
   const longPressTimer = useRef<any>(null)
 
-  // GPS Capture
+  // Live GPS Capture
   useEffect(() => {
-    if (step === 'role') {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        (err) => console.warn("GPS Denied", err),
-        { enableHighAccuracy: true }
-      )
+    if (!useLiveLocation) {
+      setGpsStatus('Manual address enabled')
+      return
     }
-  }, [step])
+
+    if (!('geolocation' in navigator)) {
+      setGpsStatus('GPS unsupported')
+      return
+    }
+
+    if (step !== 'role' && step !== 'assessment') return
+
+    setGpsStatus('Acquiring GPS...')
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setGpsStatus('GPS Locked')
+      },
+      (err) => {
+        console.warn('GPS Denied', err)
+        setGpsStatus('GPS unavailable')
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+    )
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId)
+    }
+  }, [step, useLiveLocation])
 
   const startSilentTimer = () => {
     longPressTimer.current = setTimeout(() => {
@@ -70,10 +93,11 @@ export default function GuestPage() {
   async function submitFullReport() {
     setLoading(true)
     
-    const { data, error } = await supabase.from('incidents').insert({
+const reportedLocation = useLiveLocation && coords ? `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}` : (location || 'Unknown Sector')
+      const { data, error } = await supabase.from('incidents').insert({
       type: category,
       severity: (category === 'Fire' || metadata.trapped === 'Yes') ? 'CRITICAL' : 'HIGH',
-      location: location || 'Unknown Sector',
+      location: reportedLocation,
       description: description || `${category} emergency reported by ${role}.`,
       status: 'REPORTED',
       reported_by: role,
@@ -95,10 +119,11 @@ export default function GuestPage() {
 
   async function updateStatus(status: 'SAFE' | 'NEED_HELP') {
     if (!incidentId) return
+    const statusLocation = useLiveLocation && coords ? `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}` : location
     const { error } = await supabase.from('occupant_status').insert({
       incident_id: incidentId,
       name: role === 'Guest' ? 'Guest' : role,
-      zone: location,
+      zone: statusLocation,
       role: role,
       status: status
     })
@@ -241,7 +266,9 @@ export default function GuestPage() {
                           onChange={(e) => setLocation(e.target.value)}
                         />
                      </div>
-                     {coords && <p className="text-[9px] font-mono text-emerald-500 uppercase tracking-widest">GPS Locked: {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}</p>}
+                     <p className="text-sm sm:text-base md:text-lg font-black font-mono text-emerald-400 uppercase tracking-[0.35em]">
+                        {gpsStatus}{coords ? `: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : ''}
+                     </p>
                   </div>
 
                   <div className="space-y-3">
@@ -267,11 +294,6 @@ export default function GuestPage() {
              <div className="w-24 h-24 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(16,185,129,0.3)]">
                 <CheckCircle2 className="h-12 w-12 text-emerald-500" />
              </div>
-             <div>
-                <h2 className="text-3xl font-black uppercase italic tracking-tighter text-emerald-500">Signal Sent</h2>
-                <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">Incident #{incidentId?.slice(0,8)}</p>
-             </div>
-             
              <EvacuationMap zone={location} />
 
              <div className="p-6 rounded-xl border border-slate-800 bg-slate-900/60 max-w-sm mx-auto space-y-4">
@@ -299,12 +321,6 @@ export default function GuestPage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="fixed bottom-8 text-center px-8 opacity-20 pointer-events-none">
-        <p className="text-[10px] font-black uppercase tracking-[0.3em]">
-          SECURE CHANNEL 04A // CRISISBRIDGE OPERATIONS
-        </p>
-      </div>
     </div>
   )
 }

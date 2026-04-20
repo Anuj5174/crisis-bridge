@@ -1,9 +1,10 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabase/client'
 import { 
   LayoutDashboard, 
   BarChart3, 
-  Settings, 
+  User, 
   LogOut, 
   ShieldAlert,
   Bell,
@@ -11,9 +12,30 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+const defaultAdmin = {
+  name: 'ADMIN_01',
+  title: 'Duty Commander',
+}
+
 export default function AdminLayout() {
   const location = useLocation()
   const navigate = useNavigate()
+  const [adminName, setAdminName] = useState(defaultAdmin.name)
+  const [adminTitle, setAdminTitle] = useState(defaultAdmin.title)
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem('crisisbridge-admin-profile')
+    if (!stored) return
+
+    try {
+      const parsed = JSON.parse(stored)
+      if (parsed.name) setAdminName(parsed.name)
+      if (parsed.title) setAdminTitle(parsed.title)
+    } catch {
+      setAdminName(defaultAdmin.name)
+      setAdminTitle(defaultAdmin.title)
+    }
+  }, [])
 
   const handleSignOut = async () => {
     try {
@@ -29,7 +51,7 @@ export default function AdminLayout() {
   const navItems = [
     { label: 'Command Feed', icon: LayoutDashboard, path: '/admin' },
     { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
-    { label: 'Settings', icon: Settings, path: '/admin/settings' },
+    { label: 'Personnel', icon: User, path: '/admin/personnel' },
   ]
 
   return (
@@ -92,13 +114,15 @@ export default function AdminLayout() {
               <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-600 rounded-full border-2 border-[#0b0f1a]" />
             </button>
             <div className="flex items-center gap-3 pl-6 border-l border-slate-800">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-black uppercase">ADMIN_01</p>
-                <p className="text-[10px] font-bold text-slate-500">Duty Commander</p>
-              </div>
-              <div className="h-8 w-8 rounded-lg bg-red-600/20 border border-red-600/30 flex items-center justify-center font-black">
-                A
-              </div>
+              <Link to="/admin/profile" className="group flex items-center gap-3 text-right">
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-black uppercase group-hover:text-white">{adminName}</p>
+                  <p className="text-[10px] font-bold text-slate-500 group-hover:text-slate-300">{adminTitle}</p>
+                </div>
+                <div className="h-8 w-8 rounded-lg bg-red-600/20 border border-red-600/30 flex items-center justify-center font-black transition-colors group-hover:bg-red-600/30">
+                  {adminName?.charAt(0) ?? 'A'}
+                </div>
+              </Link>
             </div>
           </div>
         </header>

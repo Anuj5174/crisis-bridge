@@ -6,7 +6,8 @@ import AdminLayout from './layouts/AdminLayout'
 import AdminDashboard from './pages/AdminDashboard'
 import IncidentDetailPage from './pages/IncidentDetailPage'
 import AnalyticsPage from './pages/AnalyticsPage'
-import SettingsPage from './pages/SettingsPage'
+import AdminProfilePage from './pages/AdminProfilePage'
+import AdminPersonnelPage from './pages/AdminPersonnelPage'
 
 
 function App() {
@@ -22,7 +23,8 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="incidents/:id" element={<IncidentDetailPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route path="personnel" element={<AdminPersonnelPage />} />
+          <Route path="profile" element={<AdminProfilePage />} />
         </Route>
 
       </Routes>
