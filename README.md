@@ -12,18 +12,20 @@ To bridge the gap between affected citizens and emergency responders through rea
 ## ✨ Key Features
 
 - **🛡️ Tactical Command Center**: A data-rich dashboard for administrators to monitor incidents in real-time.
+- **🧠 Google Gemini AI Triage**: Automatically categorizes incoming emergency reports, calculating severity, mapping affected zones, identifying spread risks, and generating immediate tactical SOP checklists for responders.
 - **📍 Hyper-Local Reporting**: Streamlined guest reporting interface for citizens to submit incident details, location data, and severity levels.
 - **📊 Advanced Analytics**: Recharts-powered data visualizations for trend analysis and resource allocation.
 - **🔐 Secure Infrastructure**: Built on Supabase for robust authentication and high-performance Postgres backend.
-- **⚡ Ultra-Responsive UI**: Built with Tailwind CSS and Framer Motion for smooth, interrupt-free interactions.
+- **⚡ Ultra-Responsive UI**: Strict TypeScript compliant, built with Tailwind CSS v4 and Framer Motion for smooth, interrupt-free interactions.
 
 ---
 
 ## 🚀 Tech Stack
 
-- **Frontend**: [React 19](https://react.dev/), [Vite 8](https://vitejs.dev/)
+- **Frontend**: [React 19](https://react.dev/), [Vite 8](https://vitejs.dev/) (Strict TypeScript)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
 - **State/Backend**: [Supabase](https://supabase.com/) (PostgreSQL & Auth)
+- **AI / LLM**: [Google Gemini 2.5 Flash](https://ai.google.dev/) (For Emergency Triage & Analysis)
 - **Routing**: [React Router 7](https://reactrouter.com/)
 - **Visuals**: [Lucide React](https://lucide.dev/) (Icons), [Framer Motion](https://www.framer.com/motion/) (Animations)
 - **Analytics**: [Recharts](https://recharts.org/)
@@ -82,14 +84,20 @@ src/
 
 ## 📜 Deployment
 
-The project is optimized for high-performance static hosting (Vercel, Netlify, or AWS Amplify).
+The project is optimized for high-performance static hosting and is currently configured for **Google Cloud Firebase Hosting**.
 
 ```bash
-# Generate production bundle
+# 1. Install Firebase CLI globally (if not installed)
+npm install -g firebase-tools
+
+# 2. Login to your Firebase / Google Cloud account
+npx firebase login
+
+# 3. Generate production bundle (strict TypeScript checking applied)
 npm run build
 
-# Preview build locally
-npm run preview
+# 4. Deploy to Firebase
+npx firebase deploy
 ```
 
 ---
