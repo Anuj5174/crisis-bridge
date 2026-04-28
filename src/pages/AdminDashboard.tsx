@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { useIncidents } from "@/hooks/useIncidents"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
 import { Link } from "react-router-dom"

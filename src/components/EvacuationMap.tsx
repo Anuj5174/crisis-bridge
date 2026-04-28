@@ -1,5 +1,5 @@
 import { motion } from "framer-motion"
-import { MapPin, Navigation, Info, AlertOctagon } from "lucide-react"
+import { Navigation, Info, AlertOctagon } from "lucide-react"
 
 export default function EvacuationMap({ zone }: { zone: string }) {
   // Simplified tactical schematic representation

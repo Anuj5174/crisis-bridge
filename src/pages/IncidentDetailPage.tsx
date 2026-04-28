@@ -106,7 +106,7 @@ export default function IncidentDetailPage() {
 
   const itemVariants = {
     hidden: { opacity: 0, x: -20 },
-    show: { opacity: 1, x: 0, transition: { type: "spring", bounce: 0.4 } }
+    show: { opacity: 1, x: 0, transition: { type: "spring" as const, bounce: 0.4 } }
   }
 
   return (

@@ -20,11 +20,11 @@ export default function OccupantTracker({ incidentId, zone }: { incidentId: stri
     unknown: 12, // Mock base unknown assumption for the zone
     evacuated: 0
   })
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchStats() {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('occupant_status')
         .select('*')
         .eq('incident_id', incidentId)

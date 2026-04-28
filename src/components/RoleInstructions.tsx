@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { User, ShieldCheck, Briefcase, HelpCircle, Map, Info, AlertTriangle } from "lucide-react"
+import { User, ShieldCheck, Briefcase, Map, Info, AlertTriangle } from "lucide-react"
 import { Button } from "./ui/button"
 
 export default function RoleInstructions({ type, severity, zone }: { type: string, severity: string, zone: string }) {

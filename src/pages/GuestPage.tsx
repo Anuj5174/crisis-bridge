@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { supabase } from "@/utils/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { motion, AnimatePresence } from "framer-motion"
-import { Siren, Flame, Plus, Lock, CheckCircle2, History, User, MapPin, AlertCircle, EyeOff, Shield, Mic, MicOff, AlertTriangle } from "lucide-react"
+import { Siren, Flame, Plus, Lock, CheckCircle2, History, User, MapPin, EyeOff, Shield, Mic, MicOff, AlertTriangle } from "lucide-react"
 import EvacuationMap from "@/components/EvacuationMap"
 
 type Step = 'initial' | 'role' | 'category' | 'assessment' | 'reported'

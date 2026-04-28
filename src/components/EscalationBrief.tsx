@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ShieldCheck, FileText, Send, X, AlertTriangle } from "lucide-react"
+import { ShieldCheck, X, AlertTriangle } from "lucide-react"
 import { Button } from "./ui/button"
 
 export default function EscalationBrief({ incident, triage, onClose }: { incident: any, triage: any, onClose: () => void }) {

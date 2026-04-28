@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import type { Incident } from "@/hooks/useIncidents";
 
 const genai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
